@@ -2,36 +2,44 @@
  * @Author: ZhouHao Joehall@foxmail.com
  * @Date: 2023-11-24 22:53:22
  * @LastEditors: ZhouHao Joehall@foxmail.com
- * @LastEditTime: 2023-11-24 22:53:33
+ * @LastEditTime: 2023-11-25 16:13:56
  * @Descripttion: 
  */
-import { Injectable } from '@nestjs/common';
-import { User } from './user.model';
 
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
-
-  getAllUsers(): User[] {
-    return this.users;
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+    private readonly configService: ConfigService
+  ) {
+    const databaseHost = this.configService.get<string>('DATABASE_HOST');
   }
 
-  getUserById(id: number): User {
-    return this.users.find(user => user.id === id);
+  async getAllUsers(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 
-  addUser(user: User): void {
-    this.users.push(user);
+  async getUserById(id: number): Promise<User> {
+    return this.usersRepository.findOne({where: {id}});
   }
 
-  updateUser(id: number, updatedUser: User): void {
-    const index = this.users.findIndex(user => user.id === id);
-    if (index !== -1) {
-      this.users[index] = { ...this.users[index], ...updatedUser };
-    }
+  async addUser(user: User): Promise<void> {
+    console.log(user,'userrrr');
+    
+    await this.usersRepository.save(user);
   }
 
-  deleteUser(id: number): void {
-    this.users = this.users.filter(user => user.id !== id);
+  async updateUser(id: number, updatedUser: User): Promise<void> {
+    await this.usersRepository.update(id, updatedUser);
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await this.usersRepository.delete(id);
   }
 }
